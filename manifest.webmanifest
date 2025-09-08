@@ -1,0 +1,20 @@
+{
+  "name": "Cat Light App",
+  "short_name": "CatLight",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fff2d5",
+  "theme_color": "#fff2d5",
+  "icons": [
+    {
+      "src": "https://placekitten.com/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placekitten.com/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
