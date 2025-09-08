@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cat Light App</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
+  <meta name="theme-color" content="#fff2d5" />
+  <link rel="icon" href="https://placekitten.com/192/192">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #fff2d5;
+      transition: background-color 0.5s ease, filter 0.5s ease;
+    }
+    .cat {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      opacity: 0.6;
+      z-index: 1;
+    }
+    main {
+      z-index: 2;
+    }
+    #video, #canvas {
+      width: 300px;
+      height: 225px;
+      background: black;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <nav class="container-fluid">
+    <ul>
+      <li><strong>Cat Light App</strong></li>
+    </ul>
+    <ul>
+      <li><a href="#" id="coolBtn">冷光</a></li>
+      <li><a href="#" id="warmBtn">暖光</a></li>
+      <li><a href="#" id="fullscreenBtn" role="button">全屏</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <div class="grid">
+      <section>
+        <hgroup>
+          <h2>补光调节</h2>
+          <h3>亮度 / 色温 / 摄像头控制</h3>
+        </hgroup>
+
+        <label for="brightness">亮度</label>
+        <input type="range" id="brightness" min="50" max="150" value="100" />
+
+        <button id="switchCam">切换前/后置摄像头</button>
+        <video id="video" autoplay playsinline></video>
+        <button id="snap">📸 拍照</button>
+        <canvas id="canvas" width="300" height="225"></canvas>
+        <a id="downloadLink" style="display:none" download="photo.png">📥 保存图片 (PNG)</a>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.error('SW registration failed', err));
+    }
+
+    const body = document.body;
+    const brightnessSlider = document.getElementById('brightness');
+    const warmBtn = document.getElementById('warmBtn');
+    const coolBtn = document.getElementById('coolBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+    const hour = new Date().getHours();
+    if (hour >= 21 || hour < 6) {
+      body.style.backgroundColor = '#fff2d5';
+      body.style.filter = 'brightness(1.2)';
+    }
+
+    warmBtn.onclick = () => body.style.backgroundColor = '#fff2d5';
+    coolBtn.onclick = () => body.style.backgroundColor = '#cde8ff';
+    brightnessSlider.oninput = (e) => body.style.filter = `brightness(${e.target.value / 100})`;
+    fullscreenBtn.onclick = () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    };
+
+    const catUrls = Array.from({ length: 8 }, (_, i) => `https://placekitten.com/80/8${i}`);
+    catUrls.forEach(url => {
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'cat';
+      img.style.top = Math.random() * 90 + '%';
+      img.style.left = Math.random() * 90 + '%';
+      document.body.appendChild(img);
+    });
+
+    let useFrontCamera = true;
+    let currentStream = null;
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const snapBtn = document.getElementById('snap');
+    const switchCamBtn = document.getElementById('switchCam');
+    const downloadLink = document.getElementById('downloadLink');
+
+    async function startCamera() {
+      if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: useFrontCamera ? 'user' : 'environment' } });
+        currentStream = stream;
+        video.srcObject = stream;
+      } catch (err) {
+        alert('无法访问摄像头: ' + err);
+      }
+    }
+    switchCamBtn.onclick = () => { useFrontCamera = !useFrontCamera; startCamera(); }
+    snapBtn.onclick = () => {
+      canvas.style.display = 'block';
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      downloadLink.href = canvas.toDataURL('image/png');
+      downloadLink.style.display = 'inline-block';
+    }
+    startCamera();
+  </script>
+</body>
+</html>
